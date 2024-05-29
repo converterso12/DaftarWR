@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Request Acid Plant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+            overflow: hidden;
+            max-width: 1200px;
+        }
+        header {
+            background: #35424a;
+            color: #ffffff;
+            padding-top: 30px;
+            min-height: 70px;
+            border-bottom: #e8491d 3px solid;
+        }
+        header h1 {
+            text-align: center;
+            margin: 0;
+            text-transform: uppercase;
+            font-size: 24px;
+        }
+        form {
+            background: #ffffff;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        form div {
+            margin-bottom: 10px;
+        }
+        form label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        form input[type="text"], form input[type="datetime-local"], form select, form textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        form textarea {
+            height: 100px;
+        }
+        form button {
+            background: #35424a;
+            color: #ffffff;
+            border: 0;
+            padding: 10px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        form button:hover {
+            background: #e8491d;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #35424a;
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Work Request Acid Plant</h1>
+    </header>
+    <div class="container">
+        <form id="workRequestForm">
+            <div>
+                <label for="datetime">Tanggal/Waktu</label>
+                <input type="datetime-local" id="datetime" required>
+            </div>
+            <div>
+                <label for="tagNumber">Tag Number</label>
+                <input type="text" id="tagNumber" required>
+            </div>
+            <div>
+                <label for="indication">Indication</label>
+                <textarea id="indication" required></textarea>
+            </div>
+            <div>
+                <label for="mtcBy">MTC by</label>
+                <select id="mtcBy" required>
+                    <option value="30/FT/MEC">30/FT/MEC</option>
+                    <option value="31/ELE">31/ELE</option>
+                    <option value="32/INS">32/INS</option>
+                </select>
+            </div>
+            <div>
+                <label for="wr">WR</label>
+                <select id="wr" required>
+                    <option value="Y">Y</option>
+                    <option value="N">N</option>
+                </select>
+            </div>
+            <div>
+                <label for="writtenBy">Written by</label>
+                <input type="text" id="writtenBy" required>
+            </div>
+            <div>
+                <label for="pic">PIC</label>
+                <input type="text" id="pic" required>
+            </div>
+            <div>
+                <label for="numberWorkRequest">Number Work Request</label>
+                <input type="text" id="numberWorkRequest" required>
+            </div>
+            <div>
+                <button type="submit">Submit</button>
+                <button type="button" onclick="window.location.href='results.html'">Lihat Hasil Input</button>
+            </div>
+        </form>
+    </div>
+    <footer>
+        Create by M. Ardiantsyah
+    </footer>
+
+    <script type="module">
+        // Firebase configuration
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD21AniBt0GcuShvdrmeJR3lmdOlYhUEiU",
+            authDomain: "workrequest-8482a.firebaseapp.com",
+            databaseURL: "https://workrequest-8482a-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "workrequest-8482a",
+            storageBucket: "workrequest-8482a.appspot.com",
+            messagingSenderId: "230020602695",
+            appId: "1:230020602695:web:802e9f107a8987e532ca62"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        document.getElementById('workRequestForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const datetime = document.getElementById('datetime').value;
+            const tagNumber = document.getElementById('tagNumber').value;
+            const indication = document.getElementById('indication').value;
+            const mtcBy = document.getElementById('mtcBy').value;
+            const wr = document.getElementById('wr').value;
+            const writtenBy = document.getElementById('writtenBy').value;
+            const pic = document.getElementById('pic').value;
+            const numberWorkRequest = document.getElementById('numberWorkRequest').value;
+
+            const workRequestRef = ref(database, 'workRequests');
+            push(workRequestRef, {
+                datetime,
+                tagNumber,
+                indication,
+                mtcBy,
+                wr,
+                writtenBy,
+                pic,
+                numberWorkRequest,
+                status: 'No Action',
+                updateHistory: []
+            }).then(() => {
+                alert('Data berhasil disimpan!');
+                document.getElementById('workRequestForm').reset();
+            }).catch(error => {
+                console.error('Error saving data:', error);
+            });
+        });
+    </script>
+</body>
+</html>

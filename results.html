@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Work Request</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Daftar Work Request</h1>
+    </header>
+    <div class="container">
+        <div class="filter-container">
+            <label for="tanggal">Pilih Tanggal:</label>
+            <input type="date" id="tanggal" name="tanggal" value="">
+            <button id="filter-button">Tampilkan Data</button>
+            <button id="export-button">Export ke Excel</button>
+        </div>
+        <div class="table-container">
+            <table id="work-request-table">
+                <thead>
+                    <tr>
+                        <th>Nomor</th>
+                        <th>Jam</th>
+                        <th>Tag Number</th>
+                        <th>Indication</th>
+                        <th>MTC by</th>
+                        <th>Status</th>
+                        <th>WR</th>
+                        <th>PIC</th>
+                        <th>WR Number</th>
+                        <th>Update</th>
+                        <th>Riwayat Update</th>
+                        <th>Hapus</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Table rows -->
+                </tbody>
+            </table>
+        </div>
+        <div class="button-container">
+            <button id="prev-button">⬅️Back</button>
+            <button onclick="verifyAndRedirect()">Kembali ke Input WR</button>
+            <button id="next-button">Next ➡️</button>
+        </div>
+    </div>
+    <footer>
+        Create by M. Ardiantsyah
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD21AniBt0GcuShvdrmeJR3lmdOlYhUEiU",
+            authDomain: "workrequest-8482a.firebaseapp.com",
+            databaseURL: "https://workrequest-8482a-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "workrequest-8482a",
+            storageBucket: "workrequest-8482a.appspot.com",
+            messagingSenderId: "230020602695",
+            appId: "1:230020602695:web:802e9f107a8987e532ca62"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        const workRequestRef = ref(database, 'workRequests');
+
+        // Fungsi untuk mengambil dan menampilkan data berdasarkan tanggal
+        function fetchDataByDate(selectedDate) {
+            onValue(workRequestRef, (snapshot) => {
+                const data = snapshot.val();
+                const tableBody = document.getElementById('table-body');
+                tableBody.innerHTML = '';
+                let count = 1;
+                for (let id in data) {
+                    // Periksa apakah tanggal pada data cocok dengan tanggal yang dipilih
+                    const dataDate = new Date(data[id].datetime);
+                    if (dataDate.toDateString() === selectedDate.toDateString()) {
+                        // Tampilkan hanya data yang cocok dengan tanggal yang dipilih
+                        const dateTime = new Date(data[id].datetime);
+                        const timeString = dateTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                        const status = data[id].status || 'No Action';
+                        const row = document.createElement('tr');
+                        const lastUpdate = data[id].updateHistory ? data[id].updateHistory[data[id].updateHistory.length - 1] : '';
+
+                        row.innerHTML = `
+                            <td>${count++}</td>
+                            <td>${timeString}</td>
+                            <td>${data[id].tagNumber}</td>
+                            <td>${data[id].indication}</td>
+                            <td>${data[id].mtcBy}</td>
+                            <td>
+                                <select data-id="${id}" class="status-dropdown">
+                                    <option value="No Action" ${status === 'No Action' ? 'selected' : ''}>No Action</option>
+                                    <option value="Ongoing" ${status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
+                                    <option value="Close" ${status === 'Close' ? 'selected' : ''}>Close</option>
+                                </select>
+                            </td>
+                            <td>${data[id].wr}</td>
+                            <td>${data[id].pic}</td>
+                            <td>${data[id].numberWorkRequest}</td>
+                            <td><button data-id="${id}" class="update-button">Update</button></td>
+                            <td>${lastUpdate}</td>
+                            <td><button data-id="${id}" class="delete-button">Hapus</button></td>
+                        `;
+                        tableBody.appendChild(row);
+                    }
+                }
+
+                // Tambahkan event listener untuk tombol update
+                document.querySelectorAll('.update-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = button.getAttribute('data-id');
+                        const status = document.querySelector(`.status-dropdown[data-id="${id}"]`).value;
+                        const currentDateTime = new Date().toLocaleString();
+                        const newUpdateHistory = data[id].updateHistory ? [...data[id].updateHistory, currentDateTime] : [currentDateTime];
+                        update(ref(database, `workRequests/${id}`), {
+                            status,
+                            updateHistory: newUpdateHistory
+                        }).then(() => {
+                            alert('Data berhasil diupdate!');
+                        }).catch(error => {
+                            console.error('Error updating data:', error);
+                        });
+                    });
+                });
+
+                // Tambahkan event listener untuk tombol hapus
+                document.querySelectorAll('.delete-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = button.getAttribute('data-id');
+                        const verificationCode = prompt('Masukkan kode verifikasi untuk menghapus:');
+                        if (verificationCode === '1111') {
+                            remove(ref(database, `workRequests/${id}`)).then(() => {
+                                alert('Data berhasil dihapus!');
+                            }).catch(error => {
+                                console.error('Error deleting data:', error);
+                            });
+                        } else {
+                            alert('Kode verifikasi salah.');
+                        }
+                    });
+                });
+            });
+        }
+
+// Fungsi untuk mengekspor tabel ke file Excel
+function exportTableToExcel(tableID, filename) {
+    const table = document.getElementById(tableID);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.table_to_sheet(table);
+
+    // Ubah lebar kolom "Tag Number" menjadi 30
+    ws['!cols'] = [{ width: 5 }, { width: 8 }, { width: 20 }, { width: 40 }, { width: 15 }, { width: 15 }, { width: 10 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 20 }];
+
+    // Buang kolom setelah "WR Number"
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    range.e.c = 8;  // Kolom "WR Number" adalah kolom ke-8 (index 7)
+    ws['!ref'] = XLSX.utils.encode_range(range);
+
+    // Ensure status column is updated accordingly
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) { // Start from 1 to skip headers
+        const statusDropdown = document.querySelector(`tr:nth-child(${R + 1}) .status-dropdown`);
+        if (statusDropdown) {
+            const id = statusDropdown.getAttribute('data-id');
+            const status = statusDropdown.value || 'No Action';
+            ws[XLSX.utils.encode_cell({ r: R, c: 5 })] = { v: status };
+        }
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, filename);
+}
+
+        // Saat dokumen dimuat, tampilkan data untuk tanggal hari ini
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
+            document.getElementById('tanggal').value = todayString;
+            fetchDataByDate(today);
+        });
+
+        // Tangani tombol "Tampilkan Data" untuk menampilkan data sesuai tanggal yang dipilih
+        document.getElementById('filter-button').addEventListener('click', () => {
+            const selectedDate = new Date(document.getElementById('tanggal').value);
+            fetchDataByDate(selectedDate);
+        });
+
+        // Tangani tombol "Export ke Excel" untuk mengekspor tabel
+        document.getElementById('export-button').addEventListener('click', () => {
+            const selectedDate = new Date(document.getElementById('tanggal').value);
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            const filename = `daftarWR-${dateStr}.xlsx`;
+            exportTableToExcel('work-request-table', filename);
+        });
+
+        // Tangani tombol "Next" untuk menampilkan data tanggal selanjutnya
+        document.getElementById('next-button').addEventListener('click', () => {
+            const currentDate = new Date(document.getElementById('tanggal').value);
+            const nextDate = new Date(currentDate);
+            nextDate.setDate(nextDate.getDate() + 1);
+            document.getElementById('tanggal').value = nextDate.toISOString().split('T')[0];
+            fetchDataByDate(nextDate);
+        });
+
+        // Tangani tombol "Previous" untuk menampilkan data tanggal sebelumnya
+        document.getElementById('prev-button').addEventListener('click', () => {
+            const currentDate = new Date(document.getElementById('tanggal').value);
+            const prevDate = new Date(currentDate);
+            prevDate.setDate(prevDate.getDate() - 1);
+            document.getElementById('tanggal').value = prevDate.toISOString().split('T')[0];
+            fetchDataByDate(prevDate);
+        });
+    </script>
+    <script>
+function verifyAndRedirect() {
+    // Meminta pengguna untuk memasukkan kode verifikasi
+    const verificationCode = prompt('Masukkan kode verifikasi:');
+    // Ganti 'YourVerificationCode' dengan kode verifikasi yang Anda inginkan
+    if (verificationCode === 'y') {
+        // Konfirmasi sebelum mengarahkan kembali ke halaman input WR
+        const confirmation = confirm('Apakah Anda yakin ingin kembali ke halaman input WR?');
+        if (confirmation) {
+            window.location.href = 'index.html';
+        }
+    } else {
+        alert('Kode verifikasi salah. Akses ditolak.');
+    }
+}
+</script>
+</body>
+</html>
