@@ -44,7 +44,7 @@
         #next-button:hover {
             background-color: #0056b3;
         }
-    </style>
+        </style>
 </head>
 <body>
     <header>
@@ -227,24 +227,24 @@
             fetchData(prevDate);
         });
 
-        // Navigate to next date
+// Navigate to next date
         nextButton.addEventListener('click', () => {
-            currentDate = new Date(filterDateInput.value);
-                currentDate.setDate(currentDate.getDate() + 1);
-                const nextDate = currentDate.toISOString().split('T')[0];
-                filterDateInput.value = nextDate;
-                fetchData(nextDate);
-            });
+            const currentDate = new Date(filterDateInput.value);
+            currentDate.setDate(currentDate.getDate() + 1);
+            const nextDate = currentDate.toISOString().split('T')[0];
+            filterDateInput.value = nextDate;
+            fetchData(nextDate);
+        });
 
-            // Verify before returning to input page
-            backButton.addEventListener('click', () => {
-                const verificationCode = prompt('Masukkan kode verifikasi untuk kembali ke halaman input Work Request:');
-                if (verificationCode === '0000') {
-                    window.location.href = 'index.html';
-                } else {
-                    alert('Kode verifikasi salah.');
-                }
-            });
-        </script>
-    </body>
+        // Verify before returning to input page
+        backButton.addEventListener('click', () => {
+            const verificationCode = prompt('Masukkan kode verifikasi untuk kembali ke halaman input Work Request:');
+            if (verificationCode === '0000') {
+                window.location.href = 'index.html';
+            } else {
+                alert('Kode verifikasi salah.');
+            }
+        });
+    </script>
+</body>
 </html>
