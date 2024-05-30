@@ -18,8 +18,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th>No</th>
-                        <th>Tanggal/Jam</th>
+                        <th>Nomor</th>
+                        <th>Jam</th>
                         <th>Tag Number</th>
                         <th>Indication</th>
                         <th>MTC by</th>
@@ -27,6 +27,7 @@
                         <th>WR</th>
                         <th>PIC</th>
                         <th>WR Number</th>
+                        <th>Written by</th>
                         <th>Update</th>
                         <th>Riwayat Update</th>
                         <th>Hapus</th>
@@ -90,6 +91,7 @@
                     <td>${data[id].wr}</td>
                     <td>${data[id].pic}</td>
                     <td>${data[id].numberWorkRequest}</td>
+                    <td>${data[id].writtenBy}</td> <!-- Added this line -->
                     <td><button data-id="${id}" class="update-button">Update</button></td>
                     <td>${lastUpdate}</td>
                     <td><button data-id="${id}" class="delete-button">Hapus</button></td>
@@ -105,7 +107,8 @@
                     const status = document.querySelector(`.status-dropdown[data-id="${id}"]`).value;
                     const updatesRef = ref(database, `workRequests/${id}/updateHistory`);
                     const currentDateTime = new Date().toLocaleString();
-                    const newUpdateHistory = data[id].updateHistory ? [...data[id].updateHistory, currentDateTime] : [currentDateTime];update(ref(database, `workRequests/${id}`), {
+                    const newUpdateHistory = data[id].updateHistory ? [...data[id].updateHistory, currentDateTime] : [currentDateTime];
+                    update(ref(database, `workRequests/${id}`), {
                         status,
                         updateHistory: newUpdateHistory
                     }).then(() => {
