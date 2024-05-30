@@ -4,9 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Work Request</title>
-     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css">
     <style>
-        
+         /* Custom styles */
+        .filter-container {
+            margin-bottom: 10px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-container label {
+            margin-right: 5px;
+            font-size: 1em;
+        }
+
+        #filter-date {
+            padding: 9px;
+            font-size: 0.9em;
+            margin-right: 10px;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #filter-button {
+            padding: 10px 10px;
+            font-size: 0.9em;
+            cursor: pointer;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            margin-right: 5px;
+        }
+
+        #filter-button:hover,
+        #prev-button:hover,
+        #next-button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -14,6 +51,11 @@
         <h1>Daftar Work Request</h1>
     </header>
     <div class="container">
+        <div class="filter-container">
+            <label for="filter-date">Tanggal:</label>
+            <input type="date" id="filter-date">
+            <button id="filter-button">Tampilkan Data</button>
+        </div>
         <div class="table-container">
             <table>
                 <thead>
@@ -34,12 +76,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Table rows -->
+                    <!-- Table rows will be dynamically inserted here -->
                 </tbody>
             </table>
         </div>
         <div class="button-container">
-            <button onclick="window.location.href='index.html'">Kembali ke Input Work Request</button>
+            <button id="prev-button">Back</button>
+            <button id="back-button">Kembali ke Input WR</button>
+            <button id="next-button">Next</button>
         </div>
     </div>
     <footer>
@@ -64,77 +108,143 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Fetch data from Firebase and display in the table
-        const workRequestRef = ref(database, 'workRequests');
-        onValue(workRequestRef, (snapshot) => {
-            const data = snapshot.val();
-            const tableBody = document.querySelector('.table-container table tbody');
-            tableBody.innerHTML = '';
-            let count = 1;
-            for (let id in data) {
-                const row = document.createElement('tr');
-                const lastUpdate = data[id].updateHistory ? data[id].updateHistory[data[id].updateHistory.length - 1] : '';
+        const filterDateInput = document.getElementById('filter-date');
+        const filterButton = document.getElementById('filter-button');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const backButton = document.getElementById('back-button');
 
-                row.innerHTML = `
-                    <td>${count++}</td>
-                    <td>${data[id].datetime}</td>
-                    <td>${data[id].tagNumber}</td>
-                    <td>${data[id].indication}</td>
-                    <td>${data[id].mtcBy}</td>
-                    <td>
-                        <select data-id="${id}" class="status-dropdown">
-                            <option value="No Action" ${data[id].status === 'No Action' ? 'selected' : ''}>No Action</option>
-                            <option value="Ongoing" ${data[id].status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
-                            <option value="Close" ${data[id].status === 'Close' ? 'selected' : ''}>Close</option>
-                        </select>
-                    </td>
-                    <td>${data[id].wr}</td>
-                    <td>${data[id].pic}</td>
-                    <td>${data[id].numberWorkRequest}</td>
-                    <td>${data[id].writtenBy}</td> <!-- Added this line -->
-                    <td><button data-id="${id}" class="update-button">Update</button></td>
-                    <td>${lastUpdate}</td>
-                    <td><button data-id="${id}" class="delete-button">Hapus</button></td>
-                `;
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        filterDateInput.value = today;
 
-                tableBody.appendChild(row);
-            }
+        const formatTime = (datetime) => {
+            const date = new Date(datetime);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        };
 
-            // Add event listeners for update and delete buttons
-            document.querySelectorAll('.update-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    const id = button.getAttribute('data-id');
-                    const status = document.querySelector(`.status-dropdown[data-id="${id}"]`).value;
-                    const updatesRef = ref(database, `workRequests/${id}/updateHistory`);
-                    const currentDateTime = new Date().toLocaleString();
-                    const newUpdateHistory = data[id].updateHistory ? [...data[id].updateHistory, currentDateTime] : [currentDateTime];
-                    update(ref(database, `workRequests/${id}`), {
-                        status,
-                        updateHistory: newUpdateHistory
-                    }).then(() => {
-                        alert('Data berhasil diupdate!');
-                    }).catch(error => {
-                        console.error('Error updating data:', error);
+        const fetchData = (filterDate) => {
+            const workRequestRef = ref(database, 'workRequests');
+            onValue(workRequestRef, (snapshot) => {
+                const data = snapshot.val();
+                const tableBody = document.querySelector('.table-container table tbody');
+                tableBody.innerHTML = '';
+                let count = 1;
+                for (let id in data) {
+                    const dataDate = new Date(data[id].datetime).toISOString().split('T')[0];
+                    if (dataDate === filterDate) {
+                        const row = document.createElement('tr');
+                        const time = formatTime(data[id].datetime);
+                        const lastUpdate = data[id].updateHistory ? data[id].updateHistory[data[id].updateHistory.length - 1] : '';
+
+                        row.innerHTML = `
+                            <td>${count++}</td>
+                            <td>${time}</td>
+                            <td>${data[id].tagNumber}</td>
+                            <td>${data[id].indication}</td>
+                            <td>${data[id].mtcBy}</td>
+                            <td>
+                                <select data-id="${id}" class="status-dropdown">
+                                    <option value="No Action" ${data[id].status === 'No Action' ? 'selected' : ''}>No Action</option>
+                                    <option value="Ongoing" ${data[id].status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
+                                    <option value="Close" ${data[id].status === 'Close' ? 'selected' : ''}>Close</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select data-id="${id}" class="wr-dropdown">
+                                    <option value="Y" ${data[id].wr === 'Y' ? 'selected' : ''}>Y</option>
+                                    <option value="N" ${data[id].wr === 'N' ? 'selected' : ''}>N</option>
+                                </select>
+                            </td>
+                            <td>${data[id].pic}</td>
+                            <td>${data[id].numberWorkRequest}</td>
+                            <td>${data[id].writtenBy}</td>
+                            <td><button data-id="${id}" class="update-button">Update</button></td>
+                            <td>${lastUpdate}</td>
+                            <td><button data-id="${id}" class="delete-button">Hapus</button></td>
+                        `;
+
+                        tableBody.appendChild(row);
+                    }
+                }
+
+                // Add event listeners for update and delete buttons
+                document.querySelectorAll('.update-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = button.getAttribute('data-id');
+                        const status = document.querySelector(`.status-dropdown[data-id="${id}"]`).value;
+                        const wr = document.querySelector(`.wr-dropdown[data-id="${id}"]`).value;
+                        const updatesRef = ref(database, `workRequests/${id}/updateHistory`);
+                        const currentDateTime = new Date().toLocaleString();
+                        const newUpdateHistory = data[id].updateHistory ? [...data[id].updateHistory, currentDateTime] : [currentDateTime];
+                        update(ref(database, `workRequests/${id}`), {
+                            status,
+                            wr,
+                            updateHistory: newUpdateHistory
+                        }).then(() => {
+                            alert('Data berhasil diupdate!');
+                        }).catch(error => {
+                            console.error('Error updating data:', error);
+                        });
+                    });
+                });
+
+                document.querySelectorAll('.delete-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = button.getAttribute('data-id');
+                        const verificationCode = prompt('Masukkan kode verifikasi untuk menghapus:');
+                        if (verificationCode === '1111') {
+                            remove(ref(database, `workRequests/${id}`)).then(() => {
+                                alert('Data berhasil dihapus!');
+                            }).catch(error => {
+                                console.error('Error deleting data:', error);
+                            });
+                        } else {
+                            alert('Kode verifikasi salah.');
+                        }
                     });
                 });
             });
+        };
 
-            document.querySelectorAll('.delete-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    const id = button.getAttribute('data-id');
-                    const verificationCode = prompt('Masukkan kode verifikasi untuk menghapus:');
-                    if (verificationCode === '1111') {
-                        remove(ref(database, `workRequests/${id}`)).then(() => {
-                            alert('Data berhasil dihapus!');
-                        }).catch(error => {
-                            console.error('Error deleting data:', error);
-                        });
-                    } else {
-                        alert('Kode verifikasi salah.');
-                    }
-                });
-            });
+        // Fetch data for today by default
+        fetchData(today);
+
+        // Fetch data based on selected date
+        filterButton.addEventListener('click', () => {
+            const filterDate = filterDateInput.value;
+            fetchData(filterDate);
         });
-    </script>
-</body>
+
+        // Navigate to previous date
+        prevButton.addEventListener('click', () => {
+            const currentDate = new Date(filterDateInput.value);
+            currentDate.setDate(currentDate.getDate() - 1);
+            const prevDate = currentDate.toISOString().split('T')[0];
+            filterDateInput.value = prevDate;
+            fetchData(prevDate);
+        });
+
+        // Navigate to next date
+        nextButton.addEventListener('click', () => {
+            currentDate = new Date(filterDateInput.value);
+                currentDate.setDate(currentDate.getDate() + 1);
+                const nextDate = currentDate.toISOString().split('T')[0];
+                filterDateInput.value = nextDate;
+                fetchData(nextDate);
+            });
+
+            // Verify before returning to input page
+            backButton.addEventListener('click', () => {
+                const verificationCode = prompt('Masukkan kode verifikasi untuk kembali ke halaman input Work Request:');
+                if (verificationCode === '0000') {
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Kode verifikasi salah.');
+                }
+            });
+        </script>
+    </body>
 </html>
