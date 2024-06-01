@@ -23,6 +23,13 @@
             padding-top: 30px;
             min-height: 70px;
             border-bottom: #e8491d 3px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        header img {
+            height: 50px;
+            margin: 0 20px;
         }
         header h1 {
             text-align: center;
@@ -74,7 +81,9 @@
 </head>
 <body>
     <header>
+        <img src="logo1.png" alt="Company Logo Left">
         <h1>Work Request Acid Plant</h1>
+        <img src="logo2.png" alt="Company Logo Right">
     </header>
     <div class="container">
         <form id="workRequestForm">
@@ -124,7 +133,7 @@
         </form>
     </div>
     <footer>
-        Create by M. Ardiantsyah
+        Create by Acid Plant MTI
     </footer>
 
     <script type="module">
@@ -133,7 +142,7 @@
         import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyD21AniBt0GcuShvdrmeJR3lmdOlYhUEiU",
+            apiKey: "YOUR_API_KEY",
             authDomain: "workrequest-8482a.firebaseapp.com",
             databaseURL: "https://workrequest-8482a-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "workrequest-8482a",
