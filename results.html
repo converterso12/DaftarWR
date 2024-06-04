@@ -6,10 +6,9 @@
     <title>Daftar Work Request</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-         /* Custom styles */
+        /* Custom styles */
         .filter-container {
-            margin-bottom: 10px;
-            margin-top: 10px;
+            margin: 10px 0;
             display: flex;
             align-items: center;
         }
@@ -19,17 +18,17 @@
             font-size: 1em;
         }
 
-        #filter-date {
+        #filter-month {
             padding: 9px;
             font-size: 0.9em;
             margin-right: 10px;
-            width: 200px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
 
-        #filter-button {
-            padding: 10px 10px;
+        #filter-button,
+        #export-pdf-button {
+            padding: 10px;
             font-size: 0.9em;
             cursor: pointer;
             color: white;
@@ -41,10 +40,18 @@
 
         #filter-button:hover,
         #prev-button:hover,
-        #next-button:hover {
+        #next-button:hover,
+        #back-button:hover,
+        #export-pdf-button:hover {
             background-color: #0056b3;
         }
-        </style>
+        
+        .keterangan-display {
+            font-size: 0.9em;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <header>
@@ -52,24 +59,26 @@
     </header>
     <div class="container">
         <div class="filter-container">
-            <label for="filter-date">Tanggal:</label>
-            <input type="date" id="filter-date">
+            <label for="filter-month">Bulan:</label>
+            <input type="month" id="filter-month">
             <button id="filter-button">Tampilkan Data</button>
+            <button id="export-pdf-button">Export to PDF</button>
         </div>
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Nomor</th>
-                        <th>Jam</th>
-                        <th>Tag Number</th>
+                        <th>No</th>
+                        <th>Req Date</th>
+                        <th>Tag Number<br><input type="text" id="filter-tag" placeholder="Cari"></th>
                         <th>Indication</th>
-                        <th>MTC by</th>
+                        <th>Responsibility</th>
+                        <th>Priority</th>
+                        <th>Req By</th>
+                        <th>WR Number</th>
                         <th>Status</th>
                         <th>WR</th>
-                        <th>PIC</th>
-                        <th>WR Number</th>
-                        <th>Written by</th>
+                        <th>Keterangan</th>
                         <th>Update</th>
                         <th>Riwayat Update</th>
                         <th>Hapus</th>
@@ -87,7 +96,7 @@
         </div>
     </div>
     <footer>
-        Create by M. Ardiantsyah
+        Created by M. Ardiantsyah
     </footer>
 
     <script type="module">
@@ -95,7 +104,7 @@
         import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyD21AniBt0GcuShvdrmeJR3lmdOlYhUEiU",
+            apiKey: "YOUR_API_KEY_HERE",
             authDomain: "workrequest-8482a.firebaseapp.com",
             databaseURL: "https://workrequest-8482a-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "workrequest-8482a",
@@ -108,15 +117,17 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        const filterDateInput = document.getElementById('filter-date');
+        const filterMonthInput = document.getElementById('filter-month');
         const filterButton = document.getElementById('filter-button');
         const prevButton = document.getElementById('prev-button');
         const nextButton = document.getElementById('next-button');
         const backButton = document.getElementById('back-button');
+        const exportPdfButton = document.getElementById('export-pdf-button');
 
-        // Set default date to today
-        const today = new Date().toISOString().split('T')[0];
-        filterDateInput.value = today;
+        // Set default month to current month
+        const today = new Date();
+        const defaultMonth = (today.getMonth() + 1).toString().padStart(2, '0');
+        filterMonthInput.value = `${today.getFullYear()}-${defaultMonth}`;
 
         const formatTime = (datetime) => {
             const date = new Date(datetime);
@@ -125,29 +136,35 @@
             return `${hours}:${minutes}`;
         };
 
-        const fetchData = (filterDate) => {
+        const fetchData = (filterMonth) => {
             const workRequestRef = ref(database, 'workRequests');
             onValue(workRequestRef, (snapshot) => {
                 const data = snapshot.val();
                 const tableBody = document.querySelector('.table-container table tbody');
                 tableBody.innerHTML = '';
                 let count = 1;
+                const rows = [];
                 for (let id in data) {
-                    const dataDate = new Date(data[id].datetime).toISOString().split('T')[0];
-                    if (dataDate === filterDate) {
+                    const dataDate = new Date(data[id].datetime);
+                    const dataMonth = (dataDate.getMonth() + 1).toString().padStart(2, '0');
+                    const dataYear = dataDate.getFullYear().toString();
+                    if (dataMonth === filterMonth) {
                         const row = document.createElement('tr');
                         const time = formatTime(data[id].datetime);
                         const lastUpdate = data[id].updateHistory ? data[id].updateHistory[data[id].updateHistory.length - 1] : '';
 
                         row.innerHTML = `
                             <td>${count++}</td>
-                            <td>${time}</td>
+                            <td>${dataDate.toISOString().split('T')[0]}</td>
                             <td>${data[id].tagNumber}</td>
                             <td>${data[id].indication}</td>
-                            <td>${data[id].mtcBy}</td>
+                            <td>${data[id].responsibility}</td>
+                            <td>${data[id].priority}</td>
+                            <td>${data[id].reqBy}</td>
+                            <td>${data[id].numberWorkRequest}</td>
                             <td>
                                 <select data-id="${id}" class="status-dropdown">
-                                    <option value="No Action" ${data[id].status === 'No Action' ? 'selected' : ''}>No Action</option>
+                                	<option value="No Action" ${data[id].status === 'No Action' ? 'selected' : ''}>No Action</option>
                                     <option value="Ongoing" ${data[id].status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
                                     <option value="Close" ${data[id].status === 'Close' ? 'selected' : ''}>Close</option>
                                 </select>
@@ -155,20 +172,29 @@
                             <td>
                                 <select data-id="${id}" class="wr-dropdown">
                                     <option value="Y" ${data[id].wr === 'Y' ? 'selected' : ''}>Y</option>
-                                    <option value="N" ${data[id].wr === 'N' ? 'selected' : ''}>N</option>
+                                    <option value="N" ${data[id].wr === 'N' ? 'selected' :''}>N</option>
                                 </select>
                             </td>
-                            <td>${data[id].pic}</td>
-                            <td>${data[id].numberWorkRequest}</td>
-                            <td>${data[id].writtenBy}</td>
+                            <td><span class="keterangan-display">${data[id].keterangan || ''}</span><br><input type="text" class="keterangan-input" data-id="${id}" value=""></td>
                             <td><button data-id="${id}" class="update-button">Update</button></td>
                             <td>${lastUpdate}</td>
                             <td><button data-id="${id}" class="delete-button">Hapus</button></td>
                         `;
 
-                        tableBody.appendChild(row);
+                        rows.push({ date: dataDate, row });
                     }
                 }
+
+                // Sort rows by date
+                rows.sort((a, b) => a.date - b.date);
+
+                // Rebuild table with sorted rows
+                rows.forEach((rowData, index) => {
+                    const row = rowData.row;
+                    const cells = row.querySelectorAll('td');
+                    cells[0].textContent = index + 1; // Update row number
+                    tableBody.appendChild(row);
+                });
 
                 // Add event listeners for update and delete buttons
                 document.querySelectorAll('.update-button').forEach(button => {
@@ -176,12 +202,13 @@
                         const id = button.getAttribute('data-id');
                         const status = document.querySelector(`.status-dropdown[data-id="${id}"]`).value;
                         const wr = document.querySelector(`.wr-dropdown[data-id="${id}"]`).value;
-                        const updatesRef = ref(database, `workRequests/${id}/updateHistory`);
+                        const keterangan = document.querySelector(`.keterangan-input[data-id="${id}"]`).value;
                         const currentDateTime = new Date().toLocaleString();
                         const newUpdateHistory = data[id].updateHistory ? [...data[id].updateHistory, currentDateTime] : [currentDateTime];
                         update(ref(database, `workRequests/${id}`), {
                             status,
                             wr,
+                            keterangan,
                             updateHistory: newUpdateHistory
                         }).then(() => {
                             alert('Data berhasil diupdate!');
@@ -209,31 +236,41 @@
             });
         };
 
-        // Fetch data for today by default
-        fetchData(today);
+        // Fetch data for current month by default
+        fetchData(defaultMonth);
 
-        // Fetch data based on selected date
+        // Fetch data based on selected month
         filterButton.addEventListener('click', () => {
-            const filterDate = filterDateInput.value;
-            fetchData(filterDate);
+            const filterMonth = filterMonthInput.value.split('-')[1];
+            fetchData(filterMonth);
         });
 
-        // Navigate to previous date
+        // Navigate to previous month
         prevButton.addEventListener('click', () => {
-            const currentDate = new Date(filterDateInput.value);
-            currentDate.setDate(currentDate.getDate() - 1);
-            const prevDate = currentDate.toISOString().split('T')[0];
-            filterDateInput.value = prevDate;
-            fetchData(prevDate);
+            let currentMonth = parseInt(filterMonthInput.value.split('-')[1]);
+            let currentYear = parseInt(filterMonthInput.value.split('-')[0]);
+            if (currentMonth === 1) {
+                currentMonth = 12;
+                currentYear -= 1;
+            } else {
+                currentMonth -= 1;
+            }
+            filterMonthInput.value = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
+            fetchData(currentMonth.toString().padStart(2, '0'));
         });
 
-// Navigate to next date
+        // Navigate to next month
         nextButton.addEventListener('click', () => {
-            const currentDate = new Date(filterDateInput.value);
-            currentDate.setDate(currentDate.getDate() + 1);
-            const nextDate = currentDate.toISOString().split('T')[0];
-            filterDateInput.value = nextDate;
-            fetchData(nextDate);
+            let currentMonth = parseInt(filterMonthInput.value.split('-')[1]);
+            let currentYear = parseInt(filterMonthInput.value.split('-')[0]);
+            if (currentMonth === 12) {
+                currentMonth = 1;
+                currentYear += 1;
+            } else {
+                currentMonth += 1;
+            }
+            filterMonthInput.value = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
+            fetchData(currentMonth.toString().padStart(2, '0'));
         });
 
         // Verify before returning to input page
@@ -244,6 +281,59 @@
             } else {
                 alert('Kode verifikasi salah.');
             }
+        });
+
+        // Export table to PDF
+        exportPdfButton.addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: "landscape" });
+
+            const filterMonth = filterMonthInput.value;
+            const [year, month] = filterMonth.split('-');
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const monthName = monthNames[parseInt(month) - 1];
+            const title = `Daftar Work Request ${monthName} ${year}`;
+
+            doc.setFontSize(18);
+            doc.text(title, 14, 20);
+            doc.autoTable({
+                startY: 30, // Adjust startY to create space between header and table
+                head: [['No', 'Req Date', 'Tag Number', 'Indication', 'Responsibility', 'Priority', 'Req By', 'WR Number', 'Status', 'WR', 'Keterangan']],
+                body: Array.from(document.querySelectorAll('.table-container table tbody tr')).map((row, index) => {
+                    const cells = row.querySelectorAll('td');
+                    const status = cells[8].querySelector('select').value;
+                    const wr = cells[9].querySelector('select').value;
+                    return [
+                        cells[0].innerText,
+                        cells[1].innerText,
+                        cells[2].innerText,
+                        cells[3].innerText,
+                        cells[4].innerText,
+                        cells[5].innerText,
+                        cells[6].innerText,
+                        cells[7].innerText,
+                        status,
+                        wr,
+                        cells[10].innerText
+                    ];
+                }),
+                columnStyles: {
+                    0: { cellWidth: 10 },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 40 },
+                    4: { cellWidth: 30 },
+                    5: { cellWidth: 20 },
+                    6: { cellWidth:20 },
+                    7: { cellWidth: 20 },
+                    8: { cellWidth: 20 },
+                    9: { cellWidth: 10 },
+                    10: { cellWidth: 35 },
+                }
+            });
+
+            const fileName = `${title} ${new Date().toLocaleTimeString('id-ID').replace(/:/g, '-')}.pdf`;
+            doc.save(fileName);
         });
     </script>
 </body>
