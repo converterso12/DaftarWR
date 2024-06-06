@@ -89,7 +89,7 @@
         <form id="workRequestForm">
             <div>
                 <label for="datetime">Req Date</label>
-                <input type="text" id="datetime" required>
+                <input type="datetime-local" id="datetime" required>
             </div>
             <div>
                 <label for="tagNumber">Tag Number</label>
@@ -114,6 +114,10 @@
             <div>
                 <label for="numberWorkRequest">WR Number</label>
                 <input type="text" id="numberWorkRequest" required>
+            </div>
+            <div>
+                <label for="status">Status</label>
+                <input type="text" id="status" required>
             </div>
             <div>
                 <label for="wr">WR</label>
@@ -161,6 +165,7 @@
             const priority = document.getElementById('priority').value;
             const reqBy = document.getElementById('reqBy').value;
             const numberWorkRequest = document.getElementById('numberWorkRequest').value;
+            const status = document.getElementById('status').value;
             const wr = document.getElementById('wr').value;
 
             const workRequestRef = ref(database, 'workRequests');
@@ -173,7 +178,7 @@
                 reqBy,
                 numberWorkRequest,
                 wr,
-                status: 'No Action',
+                status,
                 updateHistory: []
             }).then(() => {
                 alert('Data successfully saved!');
