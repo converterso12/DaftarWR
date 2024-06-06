@@ -1,4 +1,4 @@
-ini<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -77,6 +77,15 @@ ini<!DOCTYPE html>
             color: white;
             margin-top: 20px;
         }
+        #notification {
+            display: none;
+            padding: 10px;
+            background: #28a745;
+            color: #fff;
+            text-align: center;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -86,6 +95,7 @@ ini<!DOCTYPE html>
         <img src="logo2.png" alt="Company Logo Right">
     </header>
     <div class="container">
+        <div id="notification">Data successfully saved!</div>
         <form id="workRequestForm">
             <div>
                 <label for="datetime">Req Date</label>
@@ -133,11 +143,10 @@ ini<!DOCTYPE html>
         </form>
     </div>
     <footer>
-        Create by Acid Plant MTI
+        Created by Acid Plant MTI
     </footer>
 
     <script type="module">
-        // Firebase configuration
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -151,7 +160,6 @@ ini<!DOCTYPE html>
             appId: "1:230020602695:web:802e9f107a8987e532ca62"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
@@ -181,7 +189,11 @@ ini<!DOCTYPE html>
                 status,
                 updateHistory: []
             }).then(() => {
-                alert('Data successfully saved!');
+                const notification = document.getElementById('notification');
+                notification.style.display = 'block';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
                 document.getElementById('workRequestForm').reset();
             }).catch(error => {
                 console.error('Error saving data:', error);
