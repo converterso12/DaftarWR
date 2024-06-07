@@ -77,29 +77,19 @@
             color: white;
             margin-top: 20px;
         }
-        #notification {
-            display: none;
-            padding: 10px;
-            background: #28a745;
-            color: #fff;
-            text-align: center;
-            margin-top: 10px;
-            border-radius: 5px;
-        }
     </style>
 </head>
 <body>
     <header>
-        <img src="logo1.png" alt="Company Logo Left">
+        <img src="mbm.png" alt="Company Logo Left">
         <h1>Work Request Acid Plant</h1>
-        <img src="logo2.png" alt="Company Logo Right">
+        <img src="MTI.png" alt="Company Logo Right">
     </header>
     <div class="container">
-        <div id="notification">Data successfully saved!</div>
         <form id="workRequestForm">
             <div>
                 <label for="datetime">Req Date</label>
-                <input type="text" id="datetime" required>
+                <input type="datetime-local" id="datetime" required>
             </div>
             <div>
                 <label for="tagNumber">Tag Number</label>
@@ -111,23 +101,32 @@
             </div>
             <div>
                 <label for="responsibility">Responsibility</label>
-                <input type="text" id="responsibility" required>
+                <select id="responsibility" required>
+                    <option value="30/FT/MEC">30/FT/MEC</option>
+                    <option value="31/ELE">31/ELE</option>
+                    <option value="32/INS">32/INS</option>
+                </select>
             </div>
             <div>
                 <label for="priority">Priority</label>
-                <input type="text" id="priority" required>
+                <select id="priority" required>
+                    <option value="P1">P1</option>
+                    <option value="P2">P2</option>
+                    <option value="P3">P3</option>
+                </select>
             </div>
             <div>
                 <label for="reqBy">Req By</label>
-                <input type="text" id="reqBy" required>
+                <select id="reqBy" required>
+                    <option value="ANDRE">ANDRE</option>
+                    <option value="MICHAEL">MICHAEL</option>
+                    <option value="CIAWI">CIAWI</option>
+                    <option value="ALLOY">ALLOY</option>
+                </select>
             </div>
             <div>
                 <label for="numberWorkRequest">WR Number</label>
                 <input type="text" id="numberWorkRequest" required>
-            </div>
-            <div>
-                <label for="status">Status</label>
-                <input type="text" id="status" required>
             </div>
             <div>
                 <label for="wr">WR</label>
@@ -143,10 +142,11 @@
         </form>
     </div>
     <footer>
-        Created by Acid Plant MTI
+        Create by Acid Plant MTI
     </footer>
 
     <script type="module">
+        // Firebase configuration
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -160,6 +160,7 @@
             appId: "1:230020602695:web:802e9f107a8987e532ca62"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
@@ -173,7 +174,6 @@
             const priority = document.getElementById('priority').value;
             const reqBy = document.getElementById('reqBy').value;
             const numberWorkRequest = document.getElementById('numberWorkRequest').value;
-            const status = document.getElementById('status').value;
             const wr = document.getElementById('wr').value;
 
             const workRequestRef = ref(database, 'workRequests');
@@ -186,14 +186,10 @@
                 reqBy,
                 numberWorkRequest,
                 wr,
-                status,
+                status: 'No Action',
                 updateHistory: []
             }).then(() => {
-                const notification = document.getElementById('notification');
-                notification.style.display = 'block';
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 3000);
+                alert('Data successfully saved!');
                 document.getElementById('workRequestForm').reset();
             }).catch(error => {
                 console.error('Error saving data:', error);
